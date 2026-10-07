@@ -1,5 +1,19 @@
 # msmKALI — Kit portable todo-en-uno para el OnePlus 7 Pro (GM1913 / guacamole)
 
+> **Created and maintained by Luka Sorta · Ajdovščina, Slovenia**
+
+## Professional overview
+
+**msmKALI** is a recovery- and verification-oriented automation project for the **OnePlus 7 Pro GM1913**. It brings together device-state detection, backup-first workflows, integrity checks, recovery paths, Windows ARM preparation and Kali NetHunter-related setup into one guided toolkit.
+
+The project is presented as a practical systems-automation case study: the goal is not to claim ownership of the third-party tools it orchestrates, but to make a complex real-device workflow easier to reproduce, inspect and recover.
+
+**Portfolio context:** [Luka Sorta / arku75](https://github.com/arku75) · [EIDOS](https://github.com/arku75/EIDOS)
+
+---
+
+
+
 **Recupera, reinstala, particiona, arranca Windows, rootea e instala Kali NetHunter en un OnePlus 7 Pro — desde un solo menú, sin descargar nada, funcione o no el teléfono.**
 
 Un único programa (`msmkali.sh`) con menú numerado, pensado para que **cualquiera** —no solo un experto— pueda salvar y preparar su OnePlus 7 Pro paso a paso, con red de seguridad en cada acción.
