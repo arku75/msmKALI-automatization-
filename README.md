@@ -2,6 +2,29 @@
 
 > **Created and maintained by Luka Sorta · Ajdovščina, Slovenia**
 
+## Public source release · 2026-10-28
+
+The reusable source code is now included in this repository. This public package contains scripts and documentation; firmware, manufacturer tools, device images, memory dumps, personal backups and diagnostic histories are supplied separately by each user.
+
+Start with the [public source guide](docs/PUBLIC_SOURCE_GUIDE.md). To inspect the available commands without accessing a phone:
+
+```bash
+./msmkali --help
+./msmkali --list
+python3 scripts/msmkali.py --check
+```
+
+Before opening the interactive Bash toolkit, set `MSMKALI_KIT_DIR` to your own local portable kit. The scripts require the documented OnePlus 7 Pro GM1913 layout and compatible tools; this publication has been checked statically and through non-device command-line paths. Hardware flashing, repair and partitioning have not been rerun for this release.
+
+- [Source and configuration](docs/PUBLIC_SOURCE_GUIDE.md)
+- [Publication changes and validation](docs/PUBLICATION_NOTES.md)
+- [Upstream projects and attribution](THIRD_PARTY.md)
+- [English guide](README.en.md)
+
+## Earlier portable-kit description
+
+The original description below documents the author's larger private portable kit. References to bundled firmware, downloaded tools, hardware results or offline availability describe that historical kit; those binary files and personal data are not distributed in this source release.
+
 ## Professional overview
 
 **msmKALI** is a recovery- and verification-oriented automation project for the **OnePlus 7 Pro GM1913**. It brings together device-state detection, backup-first workflows, integrity checks, recovery paths, Windows ARM preparation and Kali NetHunter-related setup into one guided toolkit.
@@ -156,3 +179,4 @@ Construido sobre el trabajo de: **bkerler** (edl.py), el equipo de **Kali NetHun
 ---
 
 *Kit de recuperación personal para OnePlus 7 Pro GM1913. Úsalo con cabeza y con backups.*
+

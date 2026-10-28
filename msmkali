@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Public launcher: forward CLI arguments; never start a device action as fallback.
+set -euo pipefail
+MSMKALI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if ! command -v python3 >/dev/null 2>&1; then
+  printf '%s\n' 'Python 3 is required. Read docs/PUBLIC_SOURCE_GUIDE.md before using the Bash toolkit.' >&2
+  exit 127
+fi
+case "${1:-}" in
+  es|en) MSMKALI_LANGUAGE="$1"; shift; set -- --lang "$MSMKALI_LANGUAGE" "$@" ;;
+esac
+exec python3 "$MSMKALI_ROOT/scripts/msmkali.py" "$@"

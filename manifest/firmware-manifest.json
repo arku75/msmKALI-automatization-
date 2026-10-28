@@ -1,0 +1,13 @@
+{
+  "kit": "msmKALI OnePlus 7 Pro GM1913",
+  "note": "Binary components are not distributed. Supply your own compatible local kit and verify trusted checksums separately.",
+  "expected_layout_local": {
+    "firmware_out": "firmware/out/ (rawprogram0-5.xml, system.img, vendor.img, boot.img...)",
+    "nethunter": "nethunter/kali-nethunter-rootfs-full-arm64.tar.xz",
+    "edl_tool": "herramientas/edl-tool/edl.py (bkerler, con auth OnePlus)",
+    "twrp": "recovery/moddedtwrp.img",
+    "uefi": "uefi/guacamole-uefi.img",
+    "loader": "firmware/out/prog_firehose_ddr.elf (compatible with the selected device)"
+  },
+  "firmware_source_hint": "OxygenOS 11 GM1913 oficial + extraccion documentada en docs/es/guia/woa-op7/qfil.md"
+}

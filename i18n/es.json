@@ -1,0 +1,18 @@
+{
+  "menu_title": "msmKALI · OnePlus 7 Pro (GM1913 / guacamole)",
+  "menu_subtitle": "Recupera, reinstala y diagnostica desde Linux",
+  "opt_status": "Estado (detectar ADB/fastboot/EDL)",
+  "opt_backup": "Backup IMEI/persist (hazlo SIEMPRE primero)",
+  "opt_verify": "Verificar SHA256 del kit",
+  "opt_edl": "Entrar a EDL y leer particiones",
+  "opt_rescue": "Rescate EDL (reescribe boot sin borrar nada)",
+  "opt_flash": "Flashear OxygenOS 11",
+  "opt_doctor": "Medico NetHunter",
+  "opt_usb": "Modo USB en Windows (host/device) - ver windows/",
+  "opt_graph": "Generar grafo del proyecto (grapo-lite)",
+  "prompt_choice": "Elige una opcion",
+  "msg_need_linux": "Necesitas Linux con adb/fastboot/python3. Opcion 9 del menu .sh instala dependencias.",
+  "msg_no_edl": "No se encontro edl.py. Lee manifest/README: edl-tool va por separado (no incluido).",
+  "msg_bye": "Saliendo. Haz backup del IMEI antes de lo irreversible.",
+  "warn_irreversible": "ATENCION: lo irreversible exige backup verificado + escribir ACEPTO."
+}

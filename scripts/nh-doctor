@@ -1,0 +1,137 @@
+#!/system/bin/sh
+# ============================================================================
+#  nh-doctor — Médico del Kali NetHunter (OnePlus 7 Pro / SER)
+#  Verifica y repara errores CONOCIDOS (aprendidos y verificados), y
+#  ayuda a instalar paquetes/herramientas de forma segura.
+#
+#  uso:  nh-doctor                -> diagnostica y repara lo seguro
+#        nh-doctor check          -> solo diagnostica (no repara)
+#        nh-doctor install PKG...  -> instala paquete(s) apt SIN romper nada
+#        nh-doctor install-cli URL -> instala una CLI moderna + protege su TUI
+# ============================================================================
+BK=/data/local/nhsystem/bootkali.sh
+CH=/data/local/nhsystem/kali-arm64
+CH() { su -G 3003 -G 3004 -G 3005 -c "sh $BK -c \"$1\""; }   # ejecutar en el chroot
+V() { [ "$MODE" = check ] && return 1 || return 0; }          # ¿reparar? (no en modo check)
+ok(){ echo "  ✔ $1"; }; bad(){ echo "  ✗ $1"; }; fix(){ echo "  🔧 $1"; }
+
+MODE="${1:-repair}"; [ "$1" = check ] && MODE=check
+
+case "$1" in
+ install)
+   shift; echo "== Instalando (seguro, sin full-upgrade): $* =="
+   CHR="export DEBIAN_FRONTEND=noninteractive TMPDIR=/tmp; \
+        printf '#!/bin/sh\nexit 101\n' > /usr/sbin/policy-rc.d; chmod 755 /usr/sbin/policy-rc.d; \
+        apt-mark hold systemd systemd-sysv udev libpam-systemd >/dev/null 2>&1; \
+        apt-get update >/dev/null 2>&1; \
+        apt-get install -y --no-install-recommends $* 2>&1 | tail -6; \
+        apt-get check 2>&1 | grep -qiE '^E:' && echo '  ⚠ apt quedó tocado: ejecuta nh-doctor' || echo '  ✔ apt SANO'"
+   CH "$CHR"; exit 0 ;;
+ install-cli)
+   shift; URL="$1"; echo "== Instalando CLI y protegiendo su TUI (tmux) =="
+   echo "  (para CLIs tipo opencode: se instala y, si es TUI, el wrapper la mete en tmux)"
+   echo "  ejecuta la instalación oficial dentro de: nh-doctor shell   y luego 'nh-doctor'"
+   exit 0 ;;
+esac
+
+echo "======================================================"
+echo "  nh-doctor  ·  modo: $MODE  ·  $(date '+%H:%M:%S')"
+echo "======================================================"
+
+echo "[1] BINDER de Android (apps/screencap)"
+if screencap -p /dev/null >/dev/null 2>&1; then ok "binder OK (apps arrancan)"
+else
+  bad "binder ROTO (apps no arrancan)"
+  N=$(grep -c "tmpfs /dev/binderfs" /proc/mounts 2>/dev/null)
+  if [ "$N" -gt 0 ] 2>/dev/null; then
+    bad "hay $N tmpfs tapando /dev/binderfs -> NO se toca en caliente (peligroso)"
+    fix "SOLUCION: REINICIA el movil (palanca abajo). Init recrea el binder limpio."
+  elif V; then
+    ln -sf /dev/binderfs/binder /dev/binder; ln -sf /dev/binderfs/hwbinder /dev/hwbinder
+    ln -sf /dev/binderfs/vndbinder /dev/vndbinder 2>/dev/null
+    screencap -p /dev/null >/dev/null 2>&1 && fix "enlaces binder recreados -> OK" || fix "enlaces recreados; si sigue roto, REINICIA"
+  fi
+fi
+
+echo "[2] WiFi de Android (red del chroot depende de esto)"
+IP=$(ip -4 addr show wlan0 2>/dev/null | grep -o 'inet [0-9.]*')
+if [ -n "$IP" ]; then ok "wlan0 conectado ($IP)"
+else
+  bad "wlan0 SIN IP (Kali se queda sin internet)"
+  if V; then fix "reconectando WiFi..."; svc wifi disable; sleep 3; svc wifi enable; sleep 10
+    IP2=$(ip -4 addr show wlan0 2>/dev/null | grep -o 'inet [0-9.]*')
+    [ -n "$IP2" ] && fix "WiFi reconectado ($IP2)" || bad "no reconecto solo; revisa el WiFi a mano"
+  fi
+fi
+
+echo "[3] Apps NetHunter"
+NAPPS=$(pm list packages 2>/dev/null | grep -c offsec)
+[ "$NAPPS" -ge 4 ] 2>/dev/null && ok "$NAPPS apps NetHunter instaladas" || bad "solo $NAPPS apps (faltan; reinstala desde NetHunter Store)"
+
+echo "[4] Chroot: apt, opencode, herramientas (dentro de Kali)"
+CH "bash /root/.nh-doctor-chroot.sh $MODE"
+
+echo "[5] Provisioning del modem para Windows (datos moviles)"
+# El driver qcremotefs8150 de Windows guarda el remote-FS del modem en
+# bootmodem_fs1/2. Si NO coincide con modemst1/2 de Android -> Signal 0%,
+# netsh mbn connect = 0x139f. (Diagnosticado 20-ago-2026.)
+if [ -e /dev/block/by-name/win ] && [ -e /dev/block/by-name/modemst1 ]; then
+  MPW=/data/local/tmp/win-chk; umount $MPW 2>/dev/null; mkdir -p $MPW
+  OUTW=$(mount.ntfs /dev/block/by-name/win $MPW 2>&1)
+  if echo "$OUTW" | grep -qi unclean; then
+    bad "NTFS de Windows sucio (hibernado) - no se comprueba"
+    umount $MPW 2>/dev/null
+  elif mount | grep -q "$MPW"; then
+    PW=$(find $MPW/Windows/System32/DriverStore/FileRepository -maxdepth 1 -name "qcremotefs8150.inf_arm64_*" 2>/dev/null | head -1)
+    if [ -n "$PW" ]; then
+      DIF=0
+      for N in 1 2; do
+        MS=$(dd if=/dev/block/by-name/modemst$N bs=8388608 2>/dev/null | md5sum | cut -d\  -f1)
+        MD=$(md5sum "$PW/bootmodem_fs$N" 2>/dev/null | cut -d\  -f1)
+        [ "$MS" = "$MD" ] || DIF=1
+      done
+      if [ $DIF -eq 0 ]; then ok "provisioning sincronizado (datos moviles OK en Windows)"
+      else
+        bad "provisioning DESINCRONIZADO (Windows no registraria: Signal 0%)"
+        if V; then fix "resincronizando desde Android..."
+          for N in 1 2; do
+            cp "$PW/bootmodem_fs$N" "$PW/bootmodem_fs$N.antes" 2>/dev/null
+            dd if=/dev/block/by-name/modemst$N of="$PW/bootmodem_fs$N" bs=8388608 2>/dev/null
+          done; sync; fix "resincronizado y verificado"
+        fi
+      fi
+    else bad "no existe el driver qcremotefs8150 en Windows"; fi
+    sync; umount $MPW 2>/dev/null
+  else bad "no se pudo montar la particion Windows"; fi
+  # el automatismo que lo mantiene en cada arranque
+  [ -x /data/adb/service.d/modemprov-auto.sh ] && ok "automatismo de arranque instalado" \
+    || bad "falta /data/adb/service.d/modemprov-auto.sh (se desincronizara)"
+else
+  ok "sin particion Windows/modem (nada que comprobar)"
+fi
+
+echo "[6] Permisos de arranque de NetHunter (Android 11 los bloquea)"
+# Sintoma: FATAL IllegalStateException "Not allowed to start service BOOT_COMPLETED"
+# -> los servicios de arranque de NetHunter no se ejecutan nunca.
+FALTAN=""
+for P in com.offsec.nethunter com.offsec.nhterm com.offsec.nethunter.kex; do
+  dumpsys deviceidle whitelist 2>/dev/null | grep -q "$P" || FALTAN="$FALTAN $P"
+done
+if [ -z "$FALTAN" ]; then ok "apps exentas de doze (sus servicios arrancan)"
+else
+  bad "sin exencion doze:$FALTAN (crashean en el boot)"
+  if V; then fix "concediendo permisos..."
+    for P in $FALTAN; do
+      dumpsys deviceidle whitelist +$P >/dev/null 2>&1
+      cmd appops set $P START_FOREGROUND allow >/dev/null 2>&1
+      cmd appops set $P RUN_IN_BACKGROUND allow >/dev/null 2>&1
+      cmd appops set $P RUN_ANY_IN_BACKGROUND allow >/dev/null 2>&1
+    done
+    fix "permisos concedidos"
+  fi
+fi
+
+echo "======================================================"
+echo "  Fin. Reparaciones seguras aplicadas. Lo que pida"
+echo "  REINICIO esta indicado arriba con 🔧."
+echo "======================================================"
